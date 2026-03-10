@@ -1,0 +1,23 @@
+{
+	"name": "@0xbuidlerhq/relay.docs",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vocs dev",
+		"build": "vocs build",
+		"preview": "vocs preview"
+	},
+	"dependencies": {
+		"@0xbuidlerhq/relay": "workspace:*",
+		"react": "latest",
+		"react-dom": "latest",
+		"tailwindcss": "^4.2.1",
+		"vocs": "latest"
+	},
+	"devDependencies": {
+		"@types/react": "latest",
+		"typescript": "latest",
+		"vite-tsconfig-paths": "^6.1.1"
+	}
+}

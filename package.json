@@ -1,0 +1,14 @@
+{
+	"scripts": {
+		"build": "turbo run build",
+		"dev": "turbo run dev",
+		"start": "turbo run start"
+	},
+	"dependencies": {
+		"turbo": "^2.8.15"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.6"
+	},
+	"packageManager": "pnpm@10.13.1"
+}

@@ -1,0 +1,24 @@
+{
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "biomejs.biome",
+	"editor.codeActionsOnSave": {
+		"source.organizeImports.biome": "explicit",
+		"source.fixAll.biome": "explicit",
+		"source.removeUnusedImports": "explicit"
+	},
+	"typescript.preferences.importModuleSpecifier": "non-relative",
+	"editor.linkedEditing": true,
+
+	/*
+	 * Tailwind
+	 */
+	"tailwindCSS.experimental.classRegex": [
+		["Styles\\s*(?::\\s*[^=]+)?\\s*=\\s*([^;]*);", "['\"`]([^'\"`]*)['\"`]"]
+	],
+	"tailwindCSS.classFunctions": ["cva", "cx"],
+
+	/*
+	 * Typescript
+	 */
+	"typescript.tsdk": "node_modules/typescript/lib"
+}
