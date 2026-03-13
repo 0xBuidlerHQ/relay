@@ -4,14 +4,19 @@
 	"type": "module",
 	"scripts": {
 		"dev": "tsdown --watch",
-		"build": "tsdown"
+		"build": "tsdown",
+		"test": "npx vitest",
+		"test:watch": "npx vitest --watch"
 	},
 	"dependencies": {
 		"zustand": "^5.0.11"
 	},
 	"devDependencies": {
+		"@types/node": "^25.5.0",
+		"tsd": "^0.33.0",
 		"tsdown": "^0.21.1",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"vitest": "^4.1.0"
 	},
 	"exports": {}
 }

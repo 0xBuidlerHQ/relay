@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create, type StoreApi } from "zustand";
 
 /**
  * @dev A base step in the relay process.
@@ -60,19 +60,18 @@ type CachedRelayStepState<S, E> =
 /**
  * @dev Configuration options for the relay.
  * - `name`: Identifier for the relay.
- * - `autoExecute`: Whether steps should automatically execute one after another.
+ * - `autoNextExecute`: Whether steps should automatically execute one after another.
  * - `executeOnNext`: Whether the next step should be executed when moving to it.
  */
-type RelayConfig = {
-	name: string;
-	autoExecute?: boolean;
+type RelayConfig<C = {}> = C & {
+	autoNextExecute?: boolean;
 	executeOnNext?: boolean;
 };
 
 /**
  * @dev The full state of the relay, including steps, active step, and configuration.
  */
-type RelayState<B, S, E> = {
+type RelayState<C, B, S, E> = {
 	activeStep: number;
 	stepsState: RelayStepState<S, E>[];
 	stepsBase: RelayStepBase<B, S, E>[];
@@ -81,13 +80,13 @@ type RelayState<B, S, E> = {
 	isRunning: boolean;
 	isDone: boolean;
 	isError: boolean;
-	config: RelayConfig;
+	config: RelayConfig<C>;
 };
 
 /**
  * @dev Actions the relay can perform.
  */
-type RelayActions<B, S, E> = {
+type RelayActions<C, B, S, E> = {
 	executeStep: (stepIndex: number) => void;
 
 	setActiveStep: (step: number) => void;
@@ -104,7 +103,7 @@ type RelayActions<B, S, E> = {
 	prev: () => void;
 	reset: () => void;
 
-	initialize: (steps: RelayStepBase<B, S, E>[], newConfig?: RelayConfig) => void;
+	initialize: (steps: RelayStepBase<B, S, E>[], newConfig?: RelayConfig<C>) => void;
 };
 
 /**
@@ -118,13 +117,15 @@ type RelayActions<B, S, E> = {
  * - `S`: Represents the success payload type when a step completes successfully.
  * - `E`: Represents the error payload type when a step fails.
  */
-type RelayStore<B, S, E> = RelayState<B, S, E> & RelayActions<B, S, E>;
+type RelayStore<C, B, S, E> = RelayState<C, B, S, E> & RelayActions<C, B, S, E>;
 
 /**
  * @dev Return type of `relay`, containing the store hook and step creation function.
  */
-type RelayStoreReturn<B, S, E> = {
-	useRelay: () => RelayStore<B, S, E>;
+type RelayStoreReturn<C, B, S, E> = {
+	useRelay: () => RelayStore<C, B, S, E>;
+	relay: StoreApi<RelayStore<C, B, S, E>>;
+
 	createRelayStep: (props: Omit<RelayStepBase<B, S, E>, "index">) => RelayStepBase<B, S, E>;
 
 	StepSuccess: (data: S) => S;
@@ -143,9 +144,9 @@ type RelayStoreReturn<B, S, E> = {
  * - `S`: Represents the success payload type when a step completes successfully.
  * - `E`: Represents the error payload type when a step fails.
  */
-const relay = <B, S, E>(): RelayStoreReturn<B, S, E> => {
-	// Create the Zustand store
-	const useRelay = create<RelayStore<B, S, E>>()((set, get) => ({
+const relay = <C, B, S, E>(config: C): RelayStoreReturn<C, B, S, E> => {
+	// Create the Zustand hook store
+	const useRelay = create<RelayStore<C, B, S, E>>()((set, get) => ({
 		activeStep: 0,
 		stepsState: [],
 		stepsBase: [],
@@ -155,9 +156,9 @@ const relay = <B, S, E>(): RelayStoreReturn<B, S, E> => {
 		isDone: false,
 		isError: false,
 		config: {
-			name: "",
-			autoExecute: true,
+			autoNextExecute: true,
 			executeOnNext: false,
+			...config,
 		},
 
 		// State setters
@@ -238,7 +239,7 @@ const relay = <B, S, E>(): RelayStoreReturn<B, S, E> => {
 			stepsState[stepIndex] = loadingState;
 
 			// If the step being executed is the active step, update activeRelayStepState too
-			const updates: Partial<RelayState<B, S, E>> = {
+			const updates: Partial<RelayState<C, B, S, E>> = {
 				stepsState: [...stepsState],
 			};
 
@@ -261,7 +262,7 @@ const relay = <B, S, E>(): RelayStoreReturn<B, S, E> => {
 					stepsState[stepIndex] = successState;
 
 					// Prepare updates
-					const successUpdates: Partial<RelayState<B, S, E>> = {
+					const successUpdates: Partial<RelayState<C, B, S, E>> = {
 						stepsState: [...stepsState],
 					};
 
@@ -275,7 +276,7 @@ const relay = <B, S, E>(): RelayStoreReturn<B, S, E> => {
 					if (stepIndex === stepsBase.length - 1) {
 						state.setIsRunning(false);
 						state.setIsDone(true);
-					} else if (config.autoExecute) {
+					} else if (config.autoNextExecute) {
 						state.next();
 					}
 				})
@@ -291,7 +292,7 @@ const relay = <B, S, E>(): RelayStoreReturn<B, S, E> => {
 					stepsState[stepIndex] = errorState;
 
 					// Prepare updates
-					const errorUpdates: Partial<RelayState<B, S, E>> = {
+					const errorUpdates: Partial<RelayState<C, B, S, E>> = {
 						stepsState: [...stepsState],
 					};
 
@@ -415,8 +416,10 @@ const relay = <B, S, E>(): RelayStoreReturn<B, S, E> => {
 	// Return the store hook and step creation function
 	return {
 		useRelay,
+		relay: useRelay,
+		//
 		createRelayStep,
-
+		//
 		StepSuccess,
 		StepError,
 	};
