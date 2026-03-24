@@ -1,0 +1,111 @@
+---
+layout: docs
+---
+
+# Getting Started
+
+Relay keeps multi-step flows typed, status-aware, and observable. This step-by-step guide builds a fake Web3 pipeline, explains the artifacts you need, and shows how to execute the flow from a component.
+
+## Step 1: Create `relays.tsx` and declare Web3 types
+
+Create a dedicated module (e.g., `apps/your-app/src/relays.tsx`) that owns the Relay singleton. Begin by defining the TypeScript shapes you care about:
+
+```ts
+export type Web3RelayConfig = {
+  autoNextExecute: boolean;
+};
+
+export type Web3StepMeta = {
+  label: string;
+};
+
+export type Web3Success = {
+  txHash: string;
+  blockNumber: number;
+};
+
+export type Web3Error = {
+  message: string;
+};
+```
+
+These types keep your configuration options, step metadata, success payloads, and error payloads explicit so the rest of your app consumes typed data.
+
+## Step 2: Instantiate the Relay and export helpers
+
+With the types in place, call `createRelay` and pass the generics so the returned helpers stay typed across your app. Export the hook, store, and step builder for reuse.
+
+```ts
+import { createRelay } from "@0xbuidlerhq/relay";
+
+const {
+  useRelay,
+  relay,
+  createRelayStep,
+} = createRelay<
+  Web3RelayConfig,
+  Web3StepMeta,
+  Web3Success,
+  Web3Error
+>("web3-pipeline", { autoNextExecute: true });
+
+export { useRelay, relay, createRelayStep };
+```
+
+This gives you a singleton keyed by `web3-pipeline` with default config that automatically advances between successful steps.
+
+## Step 3: Use the relay, create steps, and execute the flow
+
+In another file (`pages/pipeline.tsx`, `components/FlowButton.tsx`, etc.), import the exported helpers, declare the steps, and hook the store into your UI.
+
+```tsx
+import {
+  useRelay,
+  createRelayStep,
+  StepSuccess,
+  StepError,
+} from "../relays";
+
+const steps = [
+  createRelayStep({
+    id: "lookup-wallet",
+    label: "Lookup wallet",
+    fn: async () => {
+      const response = await fetch("/api/wallet");
+      if (!response.ok) {
+        return StepError({ message: "Wallet lookup failed" });
+      }
+      const { blockNumber } = await response.json();
+      return StepSuccess({ txHash: "0xdeadbeef", blockNumber });
+    },
+  }),
+  createRelayStep({
+    id: "submit-tx",
+    label: "Submit transaction",
+    fn: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return StepSuccess({ txHash: "0xc0ffee", blockNumber: 999999 });
+    },
+  }),
+];
+
+function PipelineButton() {
+  const relay = useRelay();
+
+  return (
+    <button
+      onClick={() => {
+        relay.initialize(steps);
+        relay.start();
+      }}
+      disabled={relay.isRunning}
+    >
+      {relay.isRunning ? "Processing Web3" : "Run Web3 pipeline"}
+    </button>
+  );
+}
+```
+
+Because `steps` use the same metadata and payload types from `relays.tsx`, everything stays strongly typed. The `relay.initialize`/`relay.start` pair resets the flow and begins execution. You can also call `relay.retry()` after failures or `relay.next()` to advance manually, while watching `relay.stepsState` for statuses.
+
+Now your pipeline is wired: `relays.tsx` owns the typed store, the component creates typed steps, and the UI executes them through the Relay helpers.

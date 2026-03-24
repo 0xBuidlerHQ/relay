@@ -58,12 +58,12 @@ type CachedRelayStepState<S, E> =
 	| CachedRelayStepStateOther<S>;
 
 /**
- * @dev Configuration options for the relay.
- * - `name`: Identifier for the relay.
- * - `autoNextExecute`: Whether steps should automatically execute one after another.
- * - `executeOnNext`: Whether the next step should be executed when moving to it.
+ * @dev Configuration options for the relay store.
+ * The generic `C` lets callers extend this configuration for their own features.
+ * - `autoNextExecute`: Whether a successful step should automatically trigger the next one.
+ * - `executeOnNext`: Whether calling `next` should immediately execute that target step.
  */
-type RelayConfig<C = {}> = C & {
+type RelayConfig<C = object> = C & {
 	autoNextExecute?: boolean;
 	executeOnNext?: boolean;
 };
@@ -135,16 +135,22 @@ type RelayStoreReturn<C, B, S, E> = {
 /**
  * @dev Creates a Zustand store for managing a step-by-step process.
  *
- * This function returns an object with:
- * - `useRelay`: A Zustand hook for accessing the relay state and actions
- * - `createStep`: A helper function to create properly typed steps for this specific store
+ * This function returns an object that exposes:
+ * - `relay`: the underlying Zustand API for subscribers and imperative reads.
+ * - `useRelay`: a hook that reads the relay state and actions in React components.
+ * - `createRelayStep`: a helper that ensures every step is typed correctly for this store instance.
+ * - `StepSuccess`/`StepError`: payload helpers so steps return uniform success or error shapes.
  *
  * The generics used are:
- * - `B`: Represents any extra metadata or data that is associated with a step.
- * - `S`: Represents the success payload type when a step completes successfully.
- * - `E`: Represents the error payload type when a step fails.
+ * - `C`: Custom configuration data merged with `autoNextExecute` and `executeOnNext`.
+ * - `B`: Extra metadata stored on each step (for example, UI labels or icons).
+ * - `S`: Success payload shape produced by `StepSuccess`.
+ * - `E`: Error payload shape produced by `StepError`.
  */
-const relay = <C, B, S, E>(config: C): RelayStoreReturn<C, B, S, E> => {
+const relay = <C extends object, B extends object, S = unknown, E = unknown>(
+	config?: C,
+): RelayStoreReturn<C, B, S, E> => {
+	const initialConfig = config ?? ({} as C);
 	// Create the Zustand hook store
 	const useRelay = create<RelayStore<C, B, S, E>>()((set, get) => ({
 		activeStep: 0,
@@ -158,7 +164,7 @@ const relay = <C, B, S, E>(config: C): RelayStoreReturn<C, B, S, E> => {
 		config: {
 			autoNextExecute: true,
 			executeOnNext: false,
-			...config,
+			...initialConfig,
 		},
 
 		// State setters
@@ -415,10 +421,12 @@ const relay = <C, B, S, E>(config: C): RelayStoreReturn<C, B, S, E> => {
 
 	// Return the store hook and step creation function
 	return {
-		useRelay,
 		relay: useRelay,
 		//
+		useRelay,
+		//
 		createRelayStep,
+
 		//
 		StepSuccess,
 		StepError,
@@ -426,9 +434,6 @@ const relay = <C, B, S, E>(config: C): RelayStoreReturn<C, B, S, E> => {
 };
 
 export { relay };
-
-// No longer need the standalone createStep function since
-// each store instance returns its own typed createStep
 
 export type {
 	RelayStepBase,

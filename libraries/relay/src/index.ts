@@ -19,14 +19,15 @@ function createRelay<
 	TBase extends {} = DefaultActionStepBase,
 	TSuccess extends {} = DefaultActionStepSuccess,
 	TError extends {} = DefaultActionStepError,
->(instanceKey: string = DEFAULT_INSTANCE_KEY, config: TDefaultConfig) {
+>(instanceKey: string = DEFAULT_INSTANCE_KEY, config?: TDefaultConfig) {
 	if (!stepperInstances.has(instanceKey)) {
 		stepperInstances.set(instanceKey, relay<TDefaultConfig, TBase, TSuccess, TError>(config));
 	}
 
 	return stepperInstances.get(instanceKey) as {
-		useRelay: ReturnType<typeof relay<TDefaultConfig, TBase, TSuccess, TError>>["useRelay"];
 		relay: ReturnType<typeof relay<TDefaultConfig, TBase, TSuccess, TError>>["relay"];
+		//
+		useRelay: ReturnType<typeof relay<TDefaultConfig, TBase, TSuccess, TError>>["useRelay"];
 		createRelayStep: ReturnType<typeof relay<TDefaultConfig, TBase, TSuccess, TError>>["createRelayStep"];
 		StepSuccess: ReturnType<typeof relay<TDefaultConfig, TBase, TSuccess, TError>>["StepSuccess"];
 		StepError: ReturnType<typeof relay<TDefaultConfig, TBase, TSuccess, TError>>["StepError"];

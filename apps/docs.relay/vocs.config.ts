@@ -1,5 +1,6 @@
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vocs";
+import { Sidebar } from "./config/sidebar";
 
 export default defineConfig({
 	/**
@@ -7,7 +8,7 @@ export default defineConfig({
 	 */
 	vite: {
 		server: {
-			port: 3000,
+			port: 4000,
 		},
 		plugins: [tsconfigPaths()],
 	},
@@ -21,11 +22,11 @@ export default defineConfig({
 		light: "/assets/logo-dark.png",
 		dark: "/assets/logo-dark.png",
 	},
-	sidebar: [],
+	sidebar: Sidebar,
 	socials: [
 		{
 			icon: "github",
-			link: "https://github.com/0xbuidler",
+			link: "https://github.com/0xBuidlerHQ/relay",
 		},
 		{
 			icon: "x",

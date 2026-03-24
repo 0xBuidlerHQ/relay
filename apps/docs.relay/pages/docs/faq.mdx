@@ -1,0 +1,21 @@
+---
+layout: docs
+---
+
+# Frequently Asked Questions (FAQ)
+
+## How is Relay different from chaining `useEffect` hooks?
+
+`useEffect` excels at responding to prop/state changes, but it doesn’t encode the idea of a sequential flow with typed payloads or single-line navigation. Relay stores each step in a typed store, tracks its status, and exposes helpers like `start`, `retry`, and `next`. That means you can declaratively rerun the second step without coupling it to every state variable that the first step mutates.
+
+## Can Relay run outside of React (e.g., in a Node script)?
+
+Relay ships as ESM and only depends on TypeScript-friendly helpers, so you can use `createRelay` in Node.js to orchestrate background jobs or CLI flows. See `apps/docs.relay/pages/docs/examples/nodejs.mdx` for a non-React example that runs steps inside an `async` function and logs the statuses.
+
+## When should I use `retry` vs `initialize`?
+
+Use `retry` when you want to re-run the failed step with the same arguments—Relay retains the current `steps` array and lets you re-execute the step that set `relay.isErrored`. Call `initialize` when you want to swap in a completely new sequence (for example, moving from a signup flow to an onboarding flow) so the store resets and begins from step one.
+
+## Where can I inspect working Relay flows?
+
+The `apps/examples.relay` Next.js demo wires `createRelay("relay-example")` into a page (`apps/examples.relay/src/app/page.tsx`). It’s a good reference for hooking Relay into React 18 server/client components, and the docs pages under `apps/docs.relay/pages/docs/examples/` show simplified snippets you can copy/paste.

@@ -1,0 +1,16 @@
+---
+layout: docs
+---
+
+# Why Relay
+
+React makes building event-driven UIs easy, but coordinating multi-step flows—forms, payments, blockchain transactions, migrations—quickly turns into tangled `useEffect` chains, manual timers, or duplicated state. Relay was created to give those flows an explicit structure: each step is a typed operation, Relay keeps status and payload data in a Zustand-backed store, and the UI can drive navigation with helpers instead of ad-hoc callbacks.
+
+## Relay at a glance
+
+- **Typed steps** declare their success and error payloads so downstream UI code can consume results without guessing about shape.
+- **Flows** are ordered step sequences that Relay executes one by one, tracking progress and allowing retries when something fails.
+- **Stores** live per `createRelay` key and expose selectors plus helpers such as `start`, `next`, `retry`, and `initialize`.
+- **Status tracking** surfaces `idle`, `loading`, `success`, `error`, and `disabled` states for every step so you can render loaders, results, or recovery paths without custom scaffolding.
+
+Relay is intentionally un-opinionated about how you build your steps (API calls, persistence, blockchain, or CLI jobs) while still giving you atomic control over each transition. If you want to see Relay in action, move on to the Getting Started guide for typed examples and minimal React wiring.

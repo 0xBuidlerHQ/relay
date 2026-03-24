@@ -2,12 +2,15 @@
 	"name": "@0xbuidlerhq/relay",
 	"version": "0.0.0",
 	"type": "module",
+	"main": "dist/index.mjs",
+	"types": "dist/index.d.mts",
 	"scripts": {
 		"dev": "tsdown --watch",
 		"build": "tsdown",
 		"test": "npx vitest",
 		"test:watch": "npx vitest --watch"
 	},
+
 	"dependencies": {
 		"zustand": "^5.0.11"
 	},
@@ -17,6 +20,5 @@
 		"tsdown": "^0.21.1",
 		"typescript": "^5.9.3",
 		"vitest": "^4.1.0"
-	},
-	"exports": {}
+	}
 }
