@@ -18,6 +18,10 @@ export default defineConfig({
 	 */
 	rootDir: ".",
 	title: "Docs",
+	iconUrl: {
+		light: "/assets/logo-light.svg",
+		dark: "/assets/logo-dark.svg",
+	},
 	logoUrl: {
 		light: "/assets/logo-light.svg",
 		dark: "/assets/logo-dark.svg",

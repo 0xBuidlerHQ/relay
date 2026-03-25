@@ -9,10 +9,17 @@ export type MyRelayStepBase = {
 	label: string;
 };
 
-export type MyRelayStepSuccess = {
+export type MyRelayStepTransactionSuccess = {
+	type: "transaction";
 	txHash: string;
 	blockNumber: number;
 };
+
+export type MyRelayStepApiCallSuccess = {
+	type: "apicall";
+};
+
+export type MyRelayStepSuccess = MyRelayStepTransactionSuccess | MyRelayStepApiCallSuccess;
 
 export type MyRelayStepError = {
 	message: string;
