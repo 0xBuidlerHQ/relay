@@ -4,91 +4,74 @@ layout: docs
 
 # Getting Started
 
-Relay keeps multi-step flows typed, status-aware, and observable. This step-by-step guide builds a fake Web3 pipeline, explains the artifacts you need, and shows how to execute the flow from a component.
+`Relay` keeps multi-step flows typed, status-aware, and observable. This step-by-step guide builds a fake pipeline, explains the artifacts you need, and shows how to execute the flow from a component.
 
-## Step 1: Create `relays.tsx` and declare Web3 types
+## 1: Create `relays.tsx` and declare types
 
-Create a dedicated module (e.g., `apps/your-app/src/relays.tsx`) that owns the Relay singleton. Begin by defining the TypeScript shapes you care about:
+We recommend settings a unique `relays.tsx` files, hosting all of your relays. It will help you organize your code. Create a dedicated module (e.g., `apps/your-app/src/relays.tsx`) that owns the Relay singleton. Begin by defining the TypeScript shapes you care about:
 
 ```ts
-export type Web3RelayConfig = {
-  autoNextExecute: boolean;
-};
+export type RelayConfig = {};
 
-export type Web3StepMeta = {
+export type StepBase = {
   label: string;
 };
 
-export type Web3Success = {
+export type StepSuccess = {
   txHash: string;
   blockNumber: number;
 };
 
-export type Web3Error = {
+export type StepError = {
   message: string;
 };
 ```
 
 These types keep your configuration options, step metadata, success payloads, and error payloads explicit so the rest of your app consumes typed data.
 
-## Step 2: Instantiate the Relay and export helpers
+## 2: Instantiate the Relay and export helpers
 
-With the types in place, call `createRelay` and pass the generics so the returned helpers stay typed across your app. Export the hook, store, and step builder for reuse.
+With the types in place, call `createRelay` and pass the generics so the returned helpers stay typed across your app. Export the relay for re-use.
 
 ```ts
 import { createRelay } from "@0xbuidlerhq/relay";
 
-const {
-  useRelay,
-  relay,
-  createRelayStep,
-} = createRelay<
-  Web3RelayConfig,
-  Web3StepMeta,
-  Web3Success,
-  Web3Error
->("web3-pipeline", { autoNextExecute: true });
+const myRelay = createRelay<RelayConfig, StepBase, StepSuccess, StepError>("my-relay");
 
-export { useRelay, relay, createRelayStep };
+export { myRelay };
 ```
 
-This gives you a singleton keyed by `web3-pipeline` with default config that automatically advances between successful steps.
+This gives you a singleton keyed by `my-relay` with the default config.
 
-## Step 3: Use the relay, create steps, and execute the flow
-
-In another file (`pages/pipeline.tsx`, `components/FlowButton.tsx`, etc.), import the exported helpers, declare the steps, and hook the store into your UI.
+## 3: Create the steps
 
 ```tsx
-import {
-  useRelay,
-  createRelayStep,
-  StepSuccess,
-  StepError,
-} from "../relays";
+import { myRelay } from "../relays";
 
 const steps = [
   createRelayStep({
-    id: "lookup-wallet",
-    label: "Lookup wallet",
+    id: "id-0",
+    label: "This is the first step",
     fn: async () => {
-      const response = await fetch("/api/wallet");
-      if (!response.ok) {
-        return StepError({ message: "Wallet lookup failed" });
-      }
-      const { blockNumber } = await response.json();
-      return StepSuccess({ txHash: "0xdeadbeef", blockNumber });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return StepSuccess({ txHash: "0x", blockNumber: 10 });
     },
   }),
   createRelayStep({
-    id: "submit-tx",
-    label: "Submit transaction",
+    id: "id-1",
+    label: "This is the second step",
     fn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return StepSuccess({ txHash: "0xc0ffee", blockNumber: 999999 });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return StepSuccess({ txHash: "0x", blockNumber: 10 });
     },
   }),
 ];
+```
 
+## 4: Initialize the Relay with the steps
+
+
+```tsx
 function PipelineButton() {
   const relay = useRelay();
 

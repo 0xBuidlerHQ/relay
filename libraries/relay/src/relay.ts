@@ -147,7 +147,7 @@ type RelayStoreReturn<C, B, S, E> = {
  * - `S`: Success payload shape produced by `StepSuccess`.
  * - `E`: Error payload shape produced by `StepError`.
  */
-const relay = <C extends object, B extends object, S = unknown, E = unknown>(
+const relay = <C extends RelayConfig, B extends object, S = unknown, E = unknown>(
 	config?: C,
 ): RelayStoreReturn<C, B, S, E> => {
 	const initialConfig = config ?? ({} as C);

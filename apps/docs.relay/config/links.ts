@@ -6,7 +6,7 @@ const Links = {
 		faq: "/docs/faq",
 	},
 	Examples: {
-		react: "/docs/examples/react",
+		simpleExample: "/docs/examples/simple-example",
 	},
 };
 

@@ -19,8 +19,8 @@ export default defineConfig({
 	rootDir: ".",
 	title: "Docs",
 	logoUrl: {
-		light: "/assets/logo-dark.png",
-		dark: "/assets/logo-dark.png",
+		light: "/assets/logo-light.svg",
+		dark: "/assets/logo-dark.svg",
 	},
 	sidebar: Sidebar,
 	socials: [
@@ -34,9 +34,18 @@ export default defineConfig({
 		},
 	],
 	theme: {
-		accentColor: "#feec0a",
+		accentColor: {
+			light: "#ff9318",
+			dark: "#ffc517",
+		},
 
 		variables: {
+			color: {
+				background: {
+					dark: "#1A191B",
+					light: "#1A191B",
+				},
+			},
 			topNav: {
 				horizontalPadding: "10px",
 			},

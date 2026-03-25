@@ -27,8 +27,8 @@ const Sidebar: SidebarPrimitive = [
 		text: "Examples",
 		items: [
 			{
-				text: "React",
-				link: Links.Examples.react,
+				text: "Simple Example",
+				link: Links.Examples.simpleExample,
 			},
 		],
 	},

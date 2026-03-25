@@ -1,6 +1,6 @@
-import { relay } from "./relay";
+import { type RelayConfig, relay } from "./relay";
 
-type DefaultConfig = {};
+type DefaultConfig = RelayConfig;
 type DefaultActionStepBase = {};
 type DefaultActionStepSuccess = {};
 type DefaultActionStepError = {};
@@ -15,7 +15,7 @@ const DEFAULT_INSTANCE_KEY = "DEFAULT_RELAY_KEY";
  * If the same key is used multiple times, returns the existing instance (singleton per key).
  */
 function createRelay<
-	TDefaultConfig extends {} = DefaultConfig,
+	TDefaultConfig extends RelayConfig = DefaultConfig,
 	TBase extends {} = DefaultActionStepBase,
 	TSuccess extends {} = DefaultActionStepSuccess,
 	TError extends {} = DefaultActionStepError,
