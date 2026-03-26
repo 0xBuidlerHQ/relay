@@ -4,30 +4,47 @@ layout: docs
 
 # Getting Started
 
-`Relay` keeps multi-step flows typed, status-aware, and observable. This step-by-step guide builds a fake pipeline, explains the artifacts you need, and shows how to execute the flow from a component.
+This is a step by step guide to get started using Relay.
 
-## 1: Create `relays.tsx` and declare types
+## 1: Create `relays.tsx` and declare your types
 
-We recommend settings a unique `relays.tsx` files, hosting all of your relays. It will help you organize your code. Create a dedicated module (e.g., `apps/your-app/src/relays.tsx`) that owns the Relay singleton. Begin by defining the TypeScript shapes you care about:
+We recommend having an unique `relays.tsx` files, hosting all of your relays. It will help you organize your code. Create a dedicated module (e.g., `apps/your-app/src/relays.tsx`) that owns the Relay singleton. Begin by defining the TypeScript shapes you care about:
 
-```ts
-export type RelayConfig = {};
+```ts filename="relays.ts" // [!code hl]
+type RelayConfig = {};
 
-export type StepBase = {
-  label: string;
+type RelayStepBase = {
+	label: string;
 };
 
-export type StepSuccess = {
-  txHash: string;
-  blockNumber: number;
+type RelayStepTransactionSuccess = {
+	type: "transaction";
+	txHash: string;
+	blockNumber: number;
 };
 
-export type StepError = {
-  message: string;
+type RelayStepApiCallSuccess = {
+	type: "apicall";
+};
+
+type RelayStepSuccess = RelayStepTransactionSuccess | RelayStepApiCallSuccess;
+
+type RelayStepError = {
+	message: string;
 };
 ```
 
-These types keep your configuration options, step metadata, success payloads, and error payloads explicit so the rest of your app consumes typed data.
+```ts filename="example.ts" // [!code hl]
+import { http, createPublicClient } from 'viem'
+import { mainnet } from 'viem/chains'
+ 
+const client = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+})
+```
+
+These types keep your configuration options, step metadata, success payloads, and error payloads explicit so the rest of your app consumes typed data. Everything is fully typed.
 
 ## 2: Instantiate the Relay and export helpers
 
@@ -35,6 +52,8 @@ With the types in place, call `createRelay` and pass the generics so the returne
 
 ```ts
 import { createRelay } from "@0xbuidlerhq/relay";
+
+// [!include example.ts] 
 
 const myRelay = createRelay<RelayConfig, StepBase, StepSuccess, StepError>("my-relay");
 

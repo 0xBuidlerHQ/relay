@@ -3,25 +3,25 @@ import { createRelay } from "@0xbuidlerhq/relay";
 /**
  * @dev MyRelay.
  */
-export type MyRelayConfig = {};
+type MyRelayConfig = {};
 
-export type MyRelayStepBase = {
+type MyRelayStepBase = {
 	label: string;
 };
 
-export type MyRelayStepTransactionSuccess = {
+type MyRelayStepTransactionSuccess = {
 	type: "transaction";
 	txHash: string;
 	blockNumber: number;
 };
 
-export type MyRelayStepApiCallSuccess = {
+type MyRelayStepApiCallSuccess = {
 	type: "apicall";
 };
 
-export type MyRelayStepSuccess = MyRelayStepTransactionSuccess | MyRelayStepApiCallSuccess;
+type MyRelayStepSuccess = MyRelayStepTransactionSuccess | MyRelayStepApiCallSuccess;
 
-export type MyRelayStepError = {
+type MyRelayStepError = {
 	message: string;
 };
 
