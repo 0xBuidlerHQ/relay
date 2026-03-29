@@ -8,9 +8,9 @@ This is a step by step guide to get started using Relay.
 
 ## 1: Create `relays.tsx` and declare your types
 
-We recommend having an unique `relays.tsx` files, hosting all of your relays. It will help you organize your code. Create a dedicated module (e.g., `apps/your-app/src/relays.tsx`) that owns the Relay singleton. Begin by defining the TypeScript shapes you care about:
+We recommend having an unique `relays.tsx` files, hosting all of your relays. It will help you organize your code. Begin by defining the TypeScript shapes you care about:
 
-```ts filename="relays.ts" // [!code hl]
+```ts filename="relays_0.ts" // [relays.ts]
 type RelayConfig = {};
 
 type RelayStepBase = {
@@ -34,78 +34,160 @@ type RelayStepError = {
 };
 ```
 
-```ts filename="example.ts" // [!code hl]
-import { http, createPublicClient } from 'viem'
-import { mainnet } from 'viem/chains'
- 
-const client = createPublicClient({
-  chain: mainnet,
-  transport: http(),
-})
-```
-
 These types keep your configuration options, step metadata, success payloads, and error payloads explicit so the rest of your app consumes typed data. Everything is fully typed.
 
 ## 2: Instantiate the Relay and export helpers
 
-With the types in place, call `createRelay` and pass the generics so the returned helpers stay typed across your app. Export the relay for re-use.
+With the types in place, call `createRelay` and pass the generics so the returned helpers stay typed across your app. Last but not least, export the relay for re-use.
 
-```ts
+```ts filename="relays.ts" // [relays.ts]
 import { createRelay } from "@0xbuidlerhq/relay";
 
-// [!include example.ts] 
+// [!include relays_0.ts] 
 
 const myRelay = createRelay<RelayConfig, StepBase, StepSuccess, StepError>("my-relay");
 
 export { myRelay };
 ```
 
-This gives you a singleton keyed by `my-relay` with the default config.
+This gives you a singleton keyed by `my-relay` with your configurations.
 
 ## 3: Create the steps
 
-```tsx
-import { myRelay } from "../relays";
+The place where you set your steps doesn't necessarely matter. You can create them in a hook or have them set outside of react. It really is up to you. However, in most setup, the steps will most likely be inside of a react hook.
 
+Here, we are creating 3 placeholders steps. 
+
+```tsx filename="app.tsx" // [app.tsx]
 const steps = [
-  createRelayStep({
-    id: "id-0",
-    label: "This is the first step",
-    fn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return StepSuccess({ txHash: "0x", blockNumber: 10 });
-    },
-  }),
-  createRelayStep({
-    id: "id-1",
-    label: "This is the second step",
-    fn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return StepSuccess({ txHash: "0x", blockNumber: 10 });
-    },
-  }),
+	myRelay.createRelayStep({
+		id: "id-0",
+		label: "API call",
+		fn: async () => {
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			return myRelay.StepSuccess({ type: "apicall" });
+		},
+	}),
+	myRelay.createRelayStep({
+		id: "id-1",
+		label: "Send Tx",
+		fn: async () => {
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			return myRelay.StepSuccess({
+				type: "transaction",
+				txHash: "0x",
+				blockNumber: 100_000_000,
+			});
+		},
+	}),
+	myRelay.createRelayStep({
+		id: "id-2",
+		label: "API call",
+		fn: async () => {
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			return myRelay.StepSuccess({ type: "apicall" });
+		},
+	}),
 ];
 ```
 
+Our steps are now created !
+
 ## 4: Initialize the Relay with the steps
 
+Initializing the steps put them in memory, ready to fire and execute themselves.
 
-```tsx
-function PipelineButton() {
-  const relay = useRelay();
+```tsx filename="app.tsx" // [app.tsx]
+const App = () => {
+	const { initialize } = myRelay.useRelay();
 
-  return (
-    <button
-      onClick={() => {
-        relay.initialize(steps);
-        relay.start();
-      }}
-      disabled={relay.isRunning}
-    >
-      {relay.isRunning ? "Processing Web3" : "Run Web3 pipeline"}
-    </button>
-  );
-}
+	return (
+		<div className="flex gap-4">
+			<div>
+				<button
+					type="button"
+					className="bg-cyan-500/20 text-cyan-500 rounded px-2"
+					onClick={() => { initialize(steps) }}
+				>
+					Initialize
+				</button>
+			</div>
+		</div>
+	);
+};
+```
+
+## 5: Start the Relay !
+
+I guess this steps is pretty straightforward !
+
+```tsx filename="app.tsx" // [app.tsx]
+const App = () => {
+	const { start } = myRelay.useRelay();
+
+	return (
+		<div className="flex gap-4">
+			<div>
+				<button
+					type="button"
+					className="bg-amber-500/20 text-amber-500 rounded px-2"
+					onClick={() => { start() }}
+				>
+					Start
+				</button>
+			</div>
+		</div>
+	);
+};
+```
+
+## 6: Observe
+
+The last step is to observe what is actually going on inside the relay !
+
+```tsx filename="sidebar.tsx" // [sidebar.tsx]
+const Sidebar = () => {
+	const { stepsBase, stepsState } = myRelay.useRelay();
+
+	return (
+		<div>
+			{stepsBase.map((item, index) => {
+				const state = stepsState[index];
+
+				return (
+					<div className="flex gap-2" key={item.id}>
+						<div>{item.label}</div>
+
+						{(() => {
+							if (state.status === "success") {
+								const payload = state.payload;
+
+								if (payload.type === "apicall") {
+									return <div>Success</div>;
+								}
+
+								if (payload.type === "transaction") {
+									return (
+										<div className="flex gap-2">
+											<div>{payload.txHash}</div>
+											<div>{payload.blockNumber}</div>
+										</div>
+									);
+								}
+							}
+
+							if (state.status === "error") {
+								return <div>{state.payload.message}</div>;
+							}
+
+							return <div>{state.status}</div>;
+						})()}
+					</div>
+				);
+			})}
+		</div>
+	);
+};
 ```
 
 Because `steps` use the same metadata and payload types from `relays.tsx`, everything stays strongly typed. The `relay.initialize`/`relay.start` pair resets the flow and begins execution. You can also call `relay.retry()` after failures or `relay.next()` to advance manually, while watching `relay.stepsState` for statuses.

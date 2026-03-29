@@ -320,7 +320,7 @@ const relay = <C extends RelayConfig, B extends object, S = unknown, E = unknown
 		 */
 		start: () => {
 			const state = get();
-			if (state.stepsState.length > 0) {
+			if (state.stepsState.length > 0 && state.isRunning === false) {
 				state.setIsRunning(true); // Mark as running
 				state.executeStep(0); // Start from the first step
 			}

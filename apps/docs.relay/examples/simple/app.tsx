@@ -38,7 +38,7 @@ const steps = [
  * @dev App.
  */
 const App = () => {
-	const { initialize, start } = myRelay.useRelay();
+	const { initialize, start, reset } = myRelay.useRelay();
 
 	return (
 		<div className="flex gap-4">
@@ -63,6 +63,18 @@ const App = () => {
 					}}
 				>
 					Start
+				</button>
+			</div>
+
+			<div>
+				<button
+					type="button"
+					className="bg-purple-500/20 text-purple-500 rounded px-2"
+					onClick={() => {
+						reset();
+					}}
+				>
+					Reset
 				</button>
 			</div>
 		</div>
