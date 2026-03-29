@@ -16,26 +16,26 @@ const Sidebar = () => {
 						<div>{item.label}</div>
 
 						{(() => {
-							if (state.status === "success") {
-								const payload = state.payload;
+							// if (state.status === "success") {
+							// 	const payload = state.payload;
 
-								if (payload.type === "apicall") {
-									return <div>Success</div>;
-								}
+							// 	if (payload.type === "apicall") {
+							// 		return <div>Success</div>;
+							// 	}
 
-								if (payload.type === "transaction") {
-									return (
-										<div className="flex gap-2">
-											<div>{payload.txHash}</div>
-											<div>{payload.blockNumber}</div>
-										</div>
-									);
-								}
-							}
+							// 	if (payload.type === "transaction") {
+							// 		return (
+							// 			<div className="flex gap-2">
+							// 				<div>{payload.txHash}</div>
+							// 				<div>{payload.blockNumber}</div>
+							// 			</div>
+							// 		);
+							// 	}
+							// }
 
-							if (state.status === "error") {
-								return <div>{state.payload.message}</div>;
-							}
+							// if (state.status === "error") {
+							// 	return <div>{state.payload.message}</div>;
+							// }
 
 							return <div>{state.status}</div>;
 						})()}
