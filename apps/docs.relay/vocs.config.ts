@@ -2,6 +2,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vocs";
 import { Sidebar } from "./config/sidebar";
 
+import packageJson from "./package.json";
+
 export default defineConfig({
 	/**
 	 * @dev Vite config.
@@ -27,6 +29,17 @@ export default defineConfig({
 		dark: "/assets/logo-dark.svg",
 	},
 	sidebar: Sidebar,
+	topNav: [
+		{
+			text: packageJson.version,
+			items: [
+				{
+					text: "Contributing",
+					link: "https://github.com/0xBuidlerHQ/relay/blob/main/.github/CONTRIBUTING.md",
+				},
+			],
+		},
+	],
 	socials: [
 		{
 			icon: "github",
