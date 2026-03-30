@@ -4,32 +4,30 @@ layout: docs
 
 # Installation
 
-Relay is published as `@0xbuidlerhq/relay` and ships as ESM, so make sure your project declares `"type": "module"` or uses a bundler that understands `.ts/.mjs` outputs.
+Relay is published as `@0xbuidlerhq/relay` and ships as ESM.
+
+Make sure your project declares `"type": "module"` or uses a bundler that understands `.ts/.mjs` outputs.
 
 ## Add the package
 
-```bash
+:::code-group
+ 
+```bash [pnpm]
 pnpm add @0xbuidlerhq/relay
 ```
 
-If you prefer npm or yarn:
-
-```bash
+```bash [npm]
 npm install @0xbuidlerhq/relay
-# or
+```
+ 
+```bash [yarn]
 yarn add @0xbuidlerhq/relay
 ```
+ 
+:::
 
 ## Verify your toolchain
 
 - **TypeScript projects** should keep `moduleResolution` set to `node16`/`nodenext` so the exported `.ts` entry points resolve correctly.
 - **Frameworks (Next.js, Astro, etc.)** usually support ESM bundles out of the box, but confirm the build output can resolve `.ts` sources from `node_modules`.
 - Relay has no runtime peer dependencies beyond React (if you use `useRelay` in components), but you will need to polyfill `fetch` or `crypto` in environments that lack them (e.g., older Node.js versions).
-
-Once installed, import the helpers you need in your flow files, for example:
-
-```ts
-import { createRelay, createRelayStep } from "@0xbuidlerhq/relay";
-```
-
-That’s it—Relay wires itself into stores automatically, so you can define steps and flows directly in your React components or shared modules.

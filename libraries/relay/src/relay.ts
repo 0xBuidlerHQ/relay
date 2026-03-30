@@ -7,7 +7,7 @@ import { create, type StoreApi } from "zustand";
  */
 type RelayStepBase<B, S, _> = B & {
 	id: string;
-	fn: () => Promise<S>;
+	fn: (signal?: AbortSignal) => Promise<S>;
 	disabled?: boolean | undefined;
 };
 
@@ -69,9 +69,9 @@ type RelayConfig<C = object> = C & {
 };
 
 /**
- * @dev The full state of the relay, including steps, active step, and configuration.
+ * @dev The core state of the relay, including steps, active step, and configuration.
  */
-type RelayState<C, B, S, E> = {
+type RelayStateCore<C, B, S, E> = {
 	activeStep: number;
 	stepsState: RelayStepState<S, E>[];
 	stepsBase: RelayStepBase<B, S, E>[];
@@ -81,6 +81,35 @@ type RelayState<C, B, S, E> = {
 	isDone: boolean;
 	isError: boolean;
 	config: RelayConfig<C>;
+};
+
+type RelayCapabilities = {
+	canInitialize: boolean;
+	canStart: boolean;
+	canRetry: boolean;
+	canResume: boolean;
+	canNext: boolean;
+};
+
+/**
+ * @dev The full state of the relay, including derived capability flags.
+ */
+type RelayState<C, B, S, E> = RelayStateCore<C, B, S, E> & RelayCapabilities;
+
+const computeCapabilities = <C, B, S, E>(state: RelayState<C, B, S, E>): RelayCapabilities => {
+	const hasSteps = state.stepsState.length > 0;
+	const activeState = state.activeRelayStepState;
+	const isIdle = activeState?.status === "idle";
+	const isErrorState = activeState?.status === "error";
+	const isSuccessState = activeState?.status === "success";
+
+	return {
+		canInitialize: !hasSteps,
+		canStart: hasSteps && !state.isRunning && !state.isDone && state.activeStep === 0 && isIdle,
+		canRetry: hasSteps && !state.isRunning && isErrorState,
+		canResume: hasSteps && state.activeStep !== 0 && !state.isRunning && !state.isDone && isIdle,
+		canNext: hasSteps && state.activeStep < state.stepsState.length - 1 && isSuccessState,
+	};
 };
 
 /**
@@ -100,7 +129,6 @@ type RelayActions<C, B, S, E> = {
 	resume: () => void;
 	retry: () => void;
 	next: () => void;
-	prev: () => void;
 	reset: () => void;
 
 	initialize: (steps: RelayStepBase<B, S, E>[], newConfig?: RelayConfig<C>) => void;
@@ -151,267 +179,284 @@ const relay = <C extends RelayConfig, B extends object, S = unknown, E = unknown
 	config?: C,
 ): RelayStoreReturn<C, B, S, E> => {
 	const initialConfig = config ?? ({} as C);
+	let currentExecutionId = 0;
+	const markNewExecution = () => {
+		currentExecutionId += 1;
+	};
+
 	// Create the Zustand hook store
-	const useRelay = create<RelayStore<C, B, S, E>>()((set, get) => ({
-		activeStep: 0,
-		stepsState: [],
-		stepsBase: [],
-		activeRelayStepState: undefined,
-		activeRelayStepBase: undefined,
-		isRunning: false,
-		isDone: false,
-		isError: false,
-		config: {
-			autoNextExecute: true,
-			executeOnNext: false,
-			...initialConfig,
-		},
-
-		// State setters
-		setActiveStep: (step) => {
+	const useRelay = create<RelayStore<C, B, S, E>>()((set, get) => {
+		const updateCapabilities = () => {
 			const state = get();
-			set({
-				activeStep: step,
-				activeRelayStepState: state.stepsState[step],
-				activeRelayStepBase: state.stepsBase[step],
-			});
-		},
-		setStepsState: (state) => {
-			const currentState = get();
-			set({
-				stepsState: state,
-				activeRelayStepState: state[currentState.activeStep],
-			});
-		},
-		setStepsBase: (state) => {
-			const currentState = get();
-			set({
-				stepsBase: state,
-				activeRelayStepBase: state[currentState.activeStep],
-			});
-		},
-		setIsRunning: (isRunning) => set({ isRunning }),
-		setIsDone: (isDone) => set({ isDone }),
-		setIsError: (isError) => set({ isError }),
+			set(computeCapabilities(state));
+		};
 
-		// Initialize function
-		initialize: (steps, newConfig) => {
-			const initialStepsState: RelayStepState<S, E>[] = steps.map((_, index) => ({
-				index,
-				status: "idle",
-			}));
-
-			const stepsBase: RelayStepBase<B, S, E>[] = steps.map((item, index) => ({
-				index,
-				...item,
-			}));
-
-			set({
-				stepsState: [...initialStepsState],
-				stepsBase: [...stepsBase],
-				config: { ...get().config, ...newConfig },
-				activeStep: 0,
-				activeRelayStepState: initialStepsState[0],
-				activeRelayStepBase: stepsBase[0],
-				isRunning: false,
-				isDone: false,
-				isError: false,
-			});
-		},
-
-		/**
-		 * @dev Executes a step by running its function and updating the state accordingly.
-		 */
-		executeStep: (stepIndex: number) => {
-			console.log("Executing: ", stepIndex);
-			const state = get();
-			const { stepsBase, stepsState, config } = state;
-
-			const stepBase = stepsBase[stepIndex];
-			const stepState = stepsState[stepIndex];
-
-			if (!stepBase || !stepState) return;
-
-			const stepPromise = stepBase.fn();
-
-			// Create a new loading state
-			const loadingState: RelayStepState<S, E> = {
-				index: stepIndex,
-				status: "loading",
-				promise: stepPromise,
-			};
-
-			// Update current step to loading
-			stepsState[stepIndex] = loadingState;
-
-			// If the step being executed is the active step, update activeRelayStepState too
-			const updates: Partial<RelayState<C, B, S, E>> = {
-				stepsState: [...stepsState],
-			};
-
-			if (stepIndex === state.activeStep) {
-				updates.activeRelayStepState = loadingState;
-			}
-
+		const setStateWithCapabilities = (updates: Partial<RelayState<C, B, S, E>>) => {
 			set(updates);
+			updateCapabilities();
+		};
 
-			stepPromise
-				.then((data) => {
-					// Create success state with properly typed payload
-					const successState: RelayStepStateSuccess<S> = {
-						index: stepIndex,
-						status: "success",
-						payload: data,
-						promise: stepPromise,
-					};
+		return {
+			activeStep: 0,
+			stepsState: [],
+			stepsBase: [],
+			activeRelayStepState: undefined,
+			activeRelayStepBase: undefined,
+			isRunning: false,
+			isDone: false,
+			isError: false,
+			canStart: false,
+			canRetry: false,
+			canResume: false,
+			canNext: false,
+			canInitialize: true,
+			config: {
+				autoNextExecute: true,
+				executeOnNext: false,
+				...initialConfig,
+			},
 
-					stepsState[stepIndex] = successState;
-
-					// Prepare updates
-					const successUpdates: Partial<RelayState<C, B, S, E>> = {
-						stepsState: [...stepsState],
-					};
-
-					// If the step being executed is the active step, update activeRelayStepState too
-					if (stepIndex === state.activeStep) {
-						successUpdates.activeRelayStepState = successState;
-					}
-
-					set(successUpdates);
-
-					if (stepIndex === stepsBase.length - 1) {
-						state.setIsRunning(false);
-						state.setIsDone(true);
-					} else if (config.autoNextExecute) {
-						state.next();
-					}
-				})
-				.catch((error) => {
-					// Create error state with properly typed payload
-					const errorState: RelayStepStateError<E, S> = {
-						index: stepIndex,
-						status: "error",
-						payload: error as E,
-						promise: stepPromise,
-					};
-
-					stepsState[stepIndex] = errorState;
-
-					// Prepare updates
-					const errorUpdates: Partial<RelayState<C, B, S, E>> = {
-						stepsState: [...stepsState],
-					};
-
-					// If the step being executed is the active step, update activeRelayStepState too
-					if (stepIndex === state.activeStep) {
-						errorUpdates.activeRelayStepState = errorState;
-					}
-
-					set(errorUpdates);
-					state.setIsRunning(false);
-					state.setIsError(true);
+			// State setters
+			setActiveStep: (step) => {
+				const state = get();
+				setStateWithCapabilities({
+					activeStep: step,
+					activeRelayStepState: state.stepsState[step],
+					activeRelayStepBase: state.stepsBase[step],
 				});
-		},
+			},
+			setStepsState: (state) => {
+				const currentState = get();
+				setStateWithCapabilities({
+					stepsState: state,
+					activeRelayStepState: state[currentState.activeStep],
+				});
+			},
+			setStepsBase: (state) => {
+				const currentState = get();
+				setStateWithCapabilities({
+					stepsBase: state,
+					activeRelayStepBase: state[currentState.activeStep],
+				});
+			},
+			setIsRunning: (isRunning) => setStateWithCapabilities({ isRunning }),
+			setIsDone: (isDone) => setStateWithCapabilities({ isDone }),
+			setIsError: (isError) => setStateWithCapabilities({ isError }),
 
-		/**
-		 * @dev Starts executing the first step in the relay.
-		 * If there are steps to run, it marks the process as "running"
-		 * and executes the first step (step index 0).
-		 */
-		start: () => {
-			const state = get();
-			if (state.stepsState.length > 0 && state.isRunning === false && state.activeStep === 0) {
+			// Initialize function
+			initialize: (steps, newConfig) => {
+				const state = get();
+				if (!state.canInitialize) return;
+
+				markNewExecution();
+				const initialStepsState: RelayStepState<S, E>[] = steps.map((_, index) => ({
+					index,
+					status: "idle",
+				}));
+
+				const stepsBase: RelayStepBase<B, S, E>[] = steps.map((item, index) => ({
+					index,
+					...item,
+				}));
+
+				setStateWithCapabilities({
+					stepsState: [...initialStepsState],
+					stepsBase: [...stepsBase],
+					config: { ...get().config, ...newConfig },
+					activeStep: 0,
+					activeRelayStepState: initialStepsState[0],
+					activeRelayStepBase: stepsBase[0],
+					isRunning: false,
+					isDone: false,
+					isError: false,
+				});
+			},
+
+			/**
+			 * @dev Executes a step by running its function and updating the state accordingly.
+			 */
+			executeStep: (stepIndex: number) => {
+				console.log("Executing: ", stepIndex);
+				const state = get();
+				const executionId = currentExecutionId;
+				const { stepsBase, stepsState, config } = state;
+
+				const stepBase = stepsBase[stepIndex];
+				const stepState = stepsState[stepIndex];
+
+				if (!stepBase || !stepState) return;
+
+				const stepPromise = stepBase.fn();
+
+				// Create a new loading state
+				const loadingState: RelayStepState<S, E> = {
+					index: stepIndex,
+					status: "loading",
+					promise: stepPromise,
+				};
+
+				// Update current step to loading
+				stepsState[stepIndex] = loadingState;
+
+				// If the step being executed is the active step, update activeRelayStepState too
+				const updates: Partial<RelayState<C, B, S, E>> = {
+					stepsState: [...stepsState],
+				};
+
+				if (stepIndex === state.activeStep) {
+					updates.activeRelayStepState = loadingState;
+				}
+
+				setStateWithCapabilities(updates);
+
+				stepPromise
+					.then((data) => {
+						if (executionId !== currentExecutionId) return;
+						// Create success state with properly typed payload
+						const successState: RelayStepStateSuccess<S> = {
+							index: stepIndex,
+							status: "success",
+							payload: data,
+							promise: stepPromise,
+						};
+
+						stepsState[stepIndex] = successState;
+
+						// Prepare updates
+						const successUpdates: Partial<RelayState<C, B, S, E>> = {
+							stepsState: [...stepsState],
+						};
+
+						// If the step being executed is the active step, update activeRelayStepState too
+						if (stepIndex === state.activeStep) {
+							successUpdates.activeRelayStepState = successState;
+						}
+
+						setStateWithCapabilities(successUpdates);
+
+						if (stepIndex === stepsBase.length - 1) {
+							state.setIsRunning(false);
+							state.setIsDone(true);
+						} else if (config.autoNextExecute) {
+							state.next();
+						}
+					})
+					.catch((error) => {
+						if (executionId !== currentExecutionId) return;
+						// Create error state with properly typed payload
+						const errorState: RelayStepStateError<E, S> = {
+							index: stepIndex,
+							status: "error",
+							payload: error as E,
+							promise: stepPromise,
+						};
+
+						stepsState[stepIndex] = errorState;
+
+						// Prepare updates
+						const errorUpdates: Partial<RelayState<C, B, S, E>> = {
+							stepsState: [...stepsState],
+						};
+
+						// If the step being executed is the active step, update activeRelayStepState too
+						if (stepIndex === state.activeStep) {
+							errorUpdates.activeRelayStepState = errorState;
+						}
+
+						setStateWithCapabilities(errorUpdates);
+						state.setIsRunning(false);
+						state.setIsError(true);
+					});
+			},
+
+			/**
+			 * @dev Starts executing the first step in the relay.
+			 * If there are steps to run, it marks the process as "running"
+			 * and executes the first step (step index 0).
+			 */
+			start: () => {
+				const state = get();
+				if (!state.canStart) return;
+
 				state.setIsRunning(true); // Mark as running
 				state.executeStep(0); // Start from the first step
-			}
-		},
+			},
 
-		/**
-		 * @dev Resumes execution from the current active step.
-		 * If steps exist, it marks the process as "running" and runs the current step.
-		 */
-		resume: () => {
-			const state = get();
-			if (state.stepsState.length > 0) {
+			/**
+			 * @dev Resumes execution from the current active step.
+			 * If steps exist, it marks the process as "running" and runs the current step.
+			 */
+			resume: () => {
+				const state = get();
+				if (!state.canResume) return;
+
 				state.setIsRunning(true);
 				state.executeStep(state.activeStep); // Resume from where we left off
-			}
-		},
+			},
 
-		/**
-		 * @dev Retries the current step if it's not already running.
-		 * If there was an error before, it resets the error state and tries again.
-		 */
-		retry: () => {
-			const state = get();
+			/**
+			 * @dev Retries the current step if it's not already running.
+			 * If there was an error before, it resets the error state and tries again.
+			 */
+			retry: () => {
+				const state = get();
+				if (!state.canRetry) return;
 
-			if (!state.isRunning) {
 				state.setIsError(false); // Clear any error
 				state.setIsRunning(true); // Start running again
 				state.executeStep(state.activeStep); // Retry current step
-			}
-		},
+			},
 
-		/**
-		 * @dev Moves to the next step in the sequence.
-		 * If 'executeOnNext' is enabled in the config, it runs the step immediately.
-		 */
-		next: () => {
-			const state = get();
-			const { activeStep, config } = state;
+			/**
+			 * @dev Moves to the next step in the sequence.
+			 * If 'executeOnNext' is enabled in the config, it runs the step immediately.
+			 */
+			next: () => {
+				const state = get();
+				if (!state.canNext) return;
 
-			if (config.executeOnNext) {
-				state.executeStep(activeStep);
-			}
+				const { activeStep, config } = state;
 
-			if (activeStep < state.stepsState.length - 1) {
-				const nextStep = activeStep + 1;
-				state.setActiveStep(nextStep);
-
-				if (!config.executeOnNext) {
-					state.executeStep(nextStep); // Automatically execute the next step if allowed
+				if (config.executeOnNext) {
+					state.executeStep(activeStep);
 				}
-			}
-		},
 
-		/**
-		 * @dev Moves to the previous step in the sequence, if possible.
-		 * Does not execute it automatically, just updates the active step.
-		 */
-		prev: () => {
-			const state = get();
-			if (state.activeStep > 0) {
-				state.setActiveStep(state.activeStep - 1);
-			}
-		},
+				if (activeStep < state.stepsState.length - 1) {
+					const nextStep = activeStep + 1;
+					state.setActiveStep(nextStep);
 
-		/**
-		 * @dev Returns the current relay state.
-		 * This allows external components to read the current progress.
-		 */
-		get: () => {
-			const state = get();
-			return state;
-		},
+					if (!config.executeOnNext) {
+						state.executeStep(nextStep); // Automatically execute the next step if allowed
+					}
+				}
+			},
 
-		/**
-		 * @dev Resets the relay to its initial state.
-		 * Clears all steps, progress, and resets status flags.
-		 */
-		reset: () => {
-			const state = get();
-			state.setStepsState([]); // Clear all steps state
-			state.setStepsBase([]); // Clear all step definitions
-			state.setActiveStep(0); // Reset to step 0
-			set({
-				activeRelayStepState: undefined,
-				activeRelayStepBase: undefined,
-			});
-			state.setIsRunning(false); // Mark as not running
-			state.setIsDone(false); // Mark as not done
-			state.setIsError(false); // Clear any error state
-		},
-	}));
+			/**
+			 * @dev Returns the current relay state.
+			 * This allows external components to read the raw store.
+			 */
+			get: () => {
+				const state = get();
+				return state;
+			},
+
+			/**
+			 * @dev Resets the relay to its initial state.
+			 * Clears all steps, progress, and resets status flags.
+			 */
+			reset: () => {
+				const state = get();
+				markNewExecution();
+				state.setStepsState([]); // Clear all steps state
+				state.setStepsBase([]); // Clear all step definitions
+				state.setActiveStep(0); // Reset to step 0
+				setStateWithCapabilities({ activeRelayStepState: undefined, activeRelayStepBase: undefined });
+				state.setIsRunning(false); // Mark as not running
+				state.setIsDone(false); // Mark as not done
+				state.setIsError(false); // Clear any error state
+			},
+		};
+	});
 
 	// Create a properly typed step creation function
 	const createRelayStep = (props: Omit<RelayStepBase<B, S, E>, "index">) => props as RelayStepBase<B, S, E>;
@@ -443,6 +488,7 @@ export type {
 	RelayStepStateOther,
 	StepStatus,
 	RelayConfig,
+	RelayCapabilities,
 	RelayStore,
 	RelayStoreReturn,
 	CachedRelayStepState,

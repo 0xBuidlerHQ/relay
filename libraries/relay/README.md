@@ -1,5 +1,16 @@
 # Relay
 
+<p align="center">
+  <a href="https://vocs.dev">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/0xbuidlerhq/relay/blob/main/.github/logo-dark.svg">
+      <img alt="vocs logo" src="https://github.com/0xbuidlerhq/relay/blob/main/.github/logo-light.svg" width="auto" height="40">
+    </picture>
+  </a>
+</p>
+
+> Relay turns messy async flows into clean, typed step-by-step state machines your UI can control.
+
 `Relay` is a lightweight helper for orchestrating sequential steps in React, where each step may depend on the previous one (APIs, blockchain calls, persistence, etc.). React components are event driven, which often makes it hard to reason about multi-step flows; Relay wraps each step in a typed store so you can control execution, retries, caching, and navigation without piling up `useEffect` chains.
 
 ## Features

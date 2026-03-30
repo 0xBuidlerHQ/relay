@@ -4,59 +4,58 @@ layout: docs
 
 # Getting Started
 
-This is a step by step guide to get started using Relay.
+Before starting, note that `Relay` is typed from the ground up. The `createRelay` factory defined in `libraries/relay/src/relay.ts` lets you parametrize the configuration, step metadata, success payload, and error payload types before you register any steps. Type every shape first, then rely on `StepSuccess` and `StepError` to keep the runtime results discriminated so the compiler knows exactly when a step succeeded or failed. The rest of this guide walks you through that flow.
 
-## 1: Create `relays.tsx` and declare your types
+::::steps
 
-We recommend having an unique `relays.tsx` files, hosting all of your relays. It will help you organize your code. Begin by defining the TypeScript shapes you care about:
+## Declare your `config`
 
-```ts filename="relays_0.ts" // [relays.ts]
+The first step is to define the TypeScript shapes that the relay will enforce. At a minimum, specify:
+
+- `RelayConfig`: extends the default Relay configuration.
+- `RelayStepBase`: carries metadata shared between every step.
+- `RelayStepSuccess`: represents the payload returned when a step resolves successfully.
+- `RelayStepError`: represents the payload returned when a step fails.
+
+```ts filename="config.ts"
 type RelayConfig = {};
-
 type RelayStepBase = {
 	label: string;
 };
-
 type RelayStepTransactionSuccess = {
 	type: "transaction";
 	txHash: string;
 	blockNumber: number;
 };
-
 type RelayStepApiCallSuccess = {
 	type: "apicall";
 };
-
 type RelayStepSuccess = RelayStepTransactionSuccess | RelayStepApiCallSuccess;
-
 type RelayStepError = {
 	message: string;
 };
 ```
-
+ 
 These types keep your configuration options, step metadata, success payloads, and error payloads explicit so the rest of your app consumes typed data. Everything is fully typed.
 
-## 2: Instantiate the Relay and export helpers
+## Instantiate the Relay and export helpers
 
-With the types in place, call `createRelay` and pass the generics so the returned helpers stay typed across your app. Last but not least, export the relay for re-use.
+With the types in place, call `createRelay` and pass the generics so the returned helpers stay typed across your app. Doing so wires the store with your `StepSuccess` and `StepError` payload shapes and makes it easy to reuse `myRelay` from any component.
 
-```ts filename="relays.ts" // [relays.ts]
-import { createRelay } from "@0xbuidlerhq/relay";
+```ts
+// [!include config.ts] 
 
-// [!include relays_0.ts] 
-
-const myRelay = createRelay<RelayConfig, StepBase, StepSuccess, StepError>("my-relay");
-
-export { myRelay };
+const myRelay = createRelay<RelayConfig, StepBase, StepSuccess, StepError>("my-relay"); // [!code focus] 
+export { myRelay }; // [!code focus] 
 ```
 
 This gives you a singleton keyed by `my-relay` with your configurations.
 
-## 3: Create the steps
+## Create the steps
 
-The place where you set your steps doesn't necessarely matter. You can create them in a hook or have them set outside of react. It really is up to you. However, in most setup, the steps will most likely be inside of a react hook.
+Where you define your steps is flexible: you can build them inside a hook or in a standalone module, whichever fits your architecture. In most apps you will set them up while preparing the UI (typically in a hook).
 
-Here, we are creating 3 placeholders steps. 
+Below we create three placeholder steps to demonstrate the shape.
 
 ```tsx filename="app.tsx" // [app.tsx]
 const steps = [
@@ -91,11 +90,11 @@ const steps = [
 ];
 ```
 
-Our steps are now created !
+These step definitions now exist and are fully typed.
 
-## 4: Initialize the Relay with the steps
+## Initialize the Relay with the steps
 
-Initializing the steps put them in memory, ready to fire and execute themselves.
+Calling `initialize` stores the steps in memory so they are ready to fire and execute.
 
 ```tsx filename="app.tsx" // [app.tsx]
 const App = () => {
@@ -117,9 +116,9 @@ const App = () => {
 };
 ```
 
-## 5: Start the Relay !
+## Start the Relay
 
-I guess this steps is pretty straightforward !
+Starting the relay executes the initialized steps in order.
 
 ```tsx filename="app.tsx" // [app.tsx]
 const App = () => {
@@ -141,9 +140,9 @@ const App = () => {
 };
 ```
 
-## 6: Observe
+## Observe
 
-The last step is to observe what is actually going on inside the relay !
+The final step is observing the relay state and inspecting each step’s status.
 
 ```tsx filename="sidebar.tsx" // [sidebar.tsx]
 const Sidebar = () => {
@@ -190,6 +189,8 @@ const Sidebar = () => {
 };
 ```
 
-Because `steps` use the same metadata and payload types from `relays.tsx`, everything stays strongly typed. The `relay.initialize`/`relay.start` pair resets the flow and begins execution. You can also call `relay.retry()` after failures or `relay.next()` to advance manually, while watching `relay.stepsState` for statuses.
+::::
 
-Now your pipeline is wired: `relays.tsx` owns the typed store, the component creates typed steps, and the UI executes them through the Relay helpers.
+Because the `steps` share the metadata and payload types defined in `libraries/relay/src/relay.ts`, the entire pipeline stays strongly typed. The `relay.initialize`/`relay.start` pair wires the flow and begins execution. After that you can use `relay.retry()` to rerun a failed step or `relay.next()` to advance manually while keeping an eye on `relay.stepsState` for the live statuses.
+
+Now your pipeline is wired: the typed store owns the state, your component creates typed steps, and the UI executes them through the Relay helpers.

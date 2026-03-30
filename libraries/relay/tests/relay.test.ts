@@ -52,8 +52,9 @@ describe("Relay", () => {
 		const step_2 = { id: "Step-2", fn: vi.fn(async () => StepSuccess({})) };
 
 		const steps = [
-			createRelayStep({ id: step_1.id, fn: step_1.fn }),
-			createRelayStep({ id: step_2.id, fn: step_2.fn }),
+			//
+			createRelayStep(step_1),
+			createRelayStep(step_2),
 		];
 
 		relay.getState().initialize(steps);
@@ -66,6 +67,12 @@ describe("Relay", () => {
 		expect(state.activeRelayStepBase?.id).toBe(step_1.id);
 		expect(state.isRunning).toBe(false);
 		expect(state.isDone).toBe(false);
+
+		expect(state.canStart).toBe(true);
+
+		expect(state.canNext).toBe(false);
+		expect(state.canRetry).toBe(false);
+		expect(state.canResume).toBe(false);
 	});
 
 	/**
@@ -112,9 +119,4 @@ describe("Relay", () => {
 			expect(state.activeRelayStepState?.payload).toMatchObject({});
 		});
 	});
-
-	/**
-	 * @dev Evil Path.
-	 */
-	// describe("evil path", () => {});
 });
