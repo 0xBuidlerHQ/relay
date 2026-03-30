@@ -1,13 +1,13 @@
-# Relay
-
 <p align="center">
   <a href="https://vocs.dev">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://github.com/0xBuidlerHQ/relay/blob/main/.vscode/logo-dark.svg">
-      <img alt="vocs logo" src="https://github.com/0xBuidlerHQ/relay/blob/main/.vscode/logo-light.svg" width="auto" height="40">
+      <img alt="vocs logo" src="https://github.com/0xBuidlerHQ/relay/blob/main/.vscode/logo-light.svg" width="auto" height="200">
     </picture>
   </a>
 </p>
+
+# Relay
 
 > Relay turns messy async flows into clean, typed step-by-step state machines your UI can control.
 
