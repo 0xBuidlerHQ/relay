@@ -1,4 +1,4 @@
-import { createRelay } from "@0xbuidlerhq/relay";
+import { createRelay } from "@0xhq/relay";
 
 /**
  * @dev MyRelay.

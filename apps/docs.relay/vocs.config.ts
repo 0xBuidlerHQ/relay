@@ -35,7 +35,7 @@ export default defineConfig({
 			items: [
 				{
 					text: "Contributing",
-					link: "https://github.com/0xBuidlerHQ/relay/blob/main/.github/CONTRIBUTING.md",
+					link: "https://github.com/0xhq/relay/blob/main/.github/CONTRIBUTING.md",
 				},
 			],
 		},
@@ -43,7 +43,7 @@ export default defineConfig({
 	socials: [
 		{
 			icon: "github",
-			link: "https://github.com/0xBuidlerHQ/relay",
+			link: "https://github.com/0xhq/relay",
 		},
 		{
 			icon: "x",

@@ -1,5 +1,5 @@
 {
-	"name": "@0xbuidlerhq/relay",
+	"name": "@0xhq/relay",
 	"version": "0.0.0",
 	"type": "module",
 	"main": "dist/index.mjs",
@@ -10,7 +10,6 @@
 		"test": "npx vitest",
 		"test:watch": "npx vitest --watch"
 	},
-
 	"dependencies": {
 		"zustand": "^5.0.11"
 	},

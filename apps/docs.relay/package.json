@@ -1,5 +1,5 @@
 {
-	"name": "@0xbuidlerhq/docs.relay",
+	"name": "@0xhq/docs.relay",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
@@ -9,7 +9,7 @@
 		"preview": "vocs preview"
 	},
 	"dependencies": {
-		"@0xbuidlerhq/relay": "workspace:*",
+		"@0xhq/relay": "workspace:*",
 		"react": "latest",
 		"react-dom": "latest",
 		"tailwindcss": "^4.2.1",

@@ -18,7 +18,7 @@ importers:
 
   apps/docs.relay:
     dependencies:
-      '@0xbuidlerhq/relay':
+      '@0xhq/relay':
         specifier: workspace:*
         version: link:../../libraries/relay
       react:
