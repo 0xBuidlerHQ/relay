@@ -1,0 +1,21 @@
+---
+layout: docs
+---
+
+# Node.js example
+
+Relay runs just as well in CLI scripts as it does inside React. This example uses `createRelay` in a Node process to initialize three sequential steps, starts the flow, and polls the store so the script can log the current status of every step as it resolves.
+
+### Run it
+
+```bash
+pnpm dlx tsx apps/docs.relay/examples/nodejs/run.ts
+```
+
+You can swap `tsx` for `ts-node` or another TypeScript runner if that’s what your environment already uses. The key is the same: load the steps, call `relay.start()`, and read `relay.getState()` to inspect `stepsState`, capability guards, and the final payloads.
+
+### Script
+
+```ts
+// [!include ~/examples/nodejs/run.ts]
+```

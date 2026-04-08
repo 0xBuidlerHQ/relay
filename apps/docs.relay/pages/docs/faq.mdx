@@ -10,7 +10,7 @@ layout: docs
 
 ## Can Relay run outside of React (e.g., in a Node script)?
 
-Relay ships as ESM and only depends on TypeScript-friendly helpers, so you can use `createRelay` in Node.js to orchestrate background jobs or CLI flows. See `apps/docs.relay/pages/docs/examples/nodejs.mdx` for a non-React example that runs steps inside an `async` function and logs the statuses.
+Relay ships as ESM and only depends on TypeScript-friendly helpers, so you can use `createRelay` in Node.js to orchestrate background jobs or CLI flows. See the Node.js example at `/docs/examples/nodejs` for a non-React script that initializes a relay, starts the flow, and logs every step’s status as it runs.
 
 ## When should I use `retry` vs `initialize`?
 

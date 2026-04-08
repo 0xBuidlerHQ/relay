@@ -30,6 +30,10 @@ const Sidebar: SidebarPrimitive = [
 				text: "Simple Example",
 				link: Links.Examples.simpleExample,
 			},
+			{
+				text: "Node.js example",
+				link: Links.Examples.nodejsExample,
+			},
 		],
 	},
 ];

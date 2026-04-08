@@ -21,12 +21,12 @@ export default defineConfig({
 	rootDir: ".",
 	title: "Docs",
 	iconUrl: {
-		light: "/assets/logo-light.svg",
-		dark: "/assets/logo-dark.svg",
+		light: "/assets/logo.svg",
+		dark: "/assets/logo.svg",
 	},
 	logoUrl: {
-		light: "/assets/logo-light.svg",
-		dark: "/assets/logo-dark.svg",
+		light: "/assets/logo.svg",
+		dark: "/assets/logo.svg",
 	},
 	sidebar: Sidebar,
 	topNav: [
@@ -35,7 +35,7 @@ export default defineConfig({
 			items: [
 				{
 					text: "Contributing",
-					link: "https://github.com/0xhq/relay/blob/main/.github/CONTRIBUTING.md",
+					link: "https://github.com/0xbuidlerhq/relay/blob/main/.github/CONTRIBUTING.md",
 				},
 			],
 		},
@@ -43,7 +43,7 @@ export default defineConfig({
 	socials: [
 		{
 			icon: "github",
-			link: "https://github.com/0xhq/relay",
+			link: "https://github.com/0xbuidlerhq/relay",
 		},
 		{
 			icon: "x",

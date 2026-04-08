@@ -7,6 +7,7 @@ const Links = {
 	},
 	Examples: {
 		simpleExample: "/docs/examples/simple-example",
+		nodejsExample: "/docs/examples/nodejs",
 	},
 };
 
